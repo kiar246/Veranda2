@@ -1,0 +1,36 @@
+{
+    "title": "inquiries",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Primary key, auto-increment"
+        },
+        "name": {
+            "type": "string",
+            "description": "Inquirer name"
+        },
+        "email": {
+            "type": "string",
+            "description": "Inquirer email"
+        },
+        "phone": {
+            "type": "string",
+            "description": "Inquirer phone"
+        },
+        "note": {
+            "type": "string",
+            "description": "Inquiry note / message"
+        },
+        "email_sent": {
+            "type": "boolean",
+            "description": "Whether the notification email was sent successfully"
+        }
+    },
+    "required": [
+        "id",
+        "name",
+        "email",
+        "phone"
+    ]
+}

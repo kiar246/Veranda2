@@ -1,6 +1,149 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import { Heart, Settings2, Users, Mail, Phone, MapPin, ArrowRight, Briefcase } from 'lucide-react';
+import { Heart, Settings2, Users, Mail, Phone, MapPin, ArrowRight, Briefcase, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { config } from '@/lib/config';
+
+// ---------- Inquiry Form (Ask & we reply fast) ----------
+const InquiryForm = () => {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', note: '' });
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      const resp = await fetch(`${config.API_BASE_URL}/api/v1/inquiry/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          note: form.note.trim(),
+        }),
+      });
+
+      const data = await resp.json().catch(() => ({}));
+
+      if (!resp.ok) {
+        throw new Error(data?.detail || data?.message || `提交失败（HTTP ${resp.status}）`);
+      }
+
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '提交失败，请稍后再试';
+      setErrorMsg(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="lg:col-span-5">
+      <div className="bg-neutral-950 text-white p-8 md:p-10 h-full flex flex-col">
+        <div className="text-xs tracking-[0.3em] text-neutral-400 uppercase mb-3">Quick Inquiry</div>
+        <h3 className="font-display text-3xl font-light mb-2">在线询价</h3>
+        <p className="text-sm text-neutral-300 font-serif-cn mb-8 leading-relaxed">
+          留下您的联系方式，<span className="text-gold">我们会马上与您联系 · 秒回</span>
+        </p>
+
+        {submitted ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-10 fade-in">
+            <CheckCircle2 className="w-14 h-14 text-gold mb-6" strokeWidth={1} />
+            <div className="font-display text-2xl font-light mb-3">提交成功</div>
+            <p className="text-sm text-neutral-300 font-serif-cn leading-relaxed max-w-xs">
+              感谢您的信任，我们的销售经理将在第一时间与您取得联系。
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                setForm({ name: '', email: '', phone: '', note: '' });
+              }}
+              className="mt-8 text-xs tracking-[0.3em] uppercase text-neutral-400 hover:text-white transition underline-offset-4 hover:underline"
+            >
+              再次提交
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1">
+            <div>
+              <label className="block text-[11px] tracking-[0.25em] text-neutral-400 uppercase mb-2">姓名 · Name</label>
+              <input
+                type="text"
+                name="name"
+                required
+                value={form.name}
+                onChange={handleChange}
+                className="w-full bg-transparent border-b border-neutral-700 focus:border-white py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition"
+                placeholder="请输入您的姓名"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] tracking-[0.25em] text-neutral-400 uppercase mb-2">邮箱 · Email</label>
+              <input
+                type="email"
+                name="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+                className="w-full bg-transparent border-b border-neutral-700 focus:border-white py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] tracking-[0.25em] text-neutral-400 uppercase mb-2">电话 · Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                required
+                value={form.phone}
+                onChange={handleChange}
+                className="w-full bg-transparent border-b border-neutral-700 focus:border-white py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition"
+                placeholder="+86 ..."
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] tracking-[0.25em] text-neutral-400 uppercase mb-2">备注 · Note</label>
+              <textarea
+                name="note"
+                rows={3}
+                value={form.note}
+                onChange={handleChange}
+                className="w-full bg-transparent border-b border-neutral-700 focus:border-white py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition resize-none"
+                placeholder="请简述您的需求或咨询内容"
+              />
+            </div>
+
+            {errorMsg && (
+              <div className="flex items-start gap-2 text-xs text-red-400 font-serif-cn">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-4 inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-neutral-950 text-xs tracking-[0.3em] uppercase hover:bg-gold hover:text-neutral-950 transition disabled:opacity-60"
+            >
+              {submitting ? '提交中...' : '立即提交'}
+              <Send className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const philosophies = [
   { num: '01', icon: Heart, title: '以诚信服务为核心价值观', en: 'Integrity First', desc: '广州华安达实业始终以"诚信服务"为核心价值观，深耕制冷与暖通领域，服务客户遍及全国。已与数千家企业建立合作，覆盖制冷设备、冷链物流、能源环保及智能制造等多个行业，形成稳定且持续增长的客户网络。依托完善的供应链体系与专业服务能力，华安达能够实现快速响应与稳定交付，为客户提供可靠、高效的解决方案。' },
@@ -13,7 +156,6 @@ const About = () => {
 
   return (
     <Layout>
-      {/* Hero */}
       <section className="relative bg-paper py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04]">
           <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full border border-neutral-900" />
@@ -39,7 +181,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Company intro stats */}
       <section className="py-20 bg-white border-b border-neutral-200">
         <div className="container-x grid grid-cols-2 md:grid-cols-4 gap-12">
           <div>
@@ -61,14 +202,11 @@ const About = () => {
         </div>
       </section>
 
-      {/* Philosophy */}
       <section className="py-28 bg-neutral-50">
         <div className="container-x">
           <div className="text-center mb-20">
             <div className="text-xs tracking-[0.3em] text-neutral-500 uppercase mb-4">Our Philosophy</div>
-            <h2 className="font-display text-4xl md:text-5xl text-neutral-950 font-light">
-              我们的理念
-            </h2>
+            <h2 className="font-display text-4xl md:text-5xl text-neutral-950 font-light">我们的理念</h2>
             <div className="divider-art max-w-xs mx-auto mt-6"></div>
           </div>
 
@@ -95,15 +233,12 @@ const About = () => {
         </div>
       </section>
 
-      {/* News */}
       <section className="py-24 bg-white">
         <div className="container-x">
           <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
             <div>
               <div className="text-xs tracking-[0.3em] text-neutral-500 uppercase mb-4">Latest News</div>
-              <h2 className="font-display text-4xl md:text-5xl text-neutral-950 font-light">
-                新闻 <span className="italic">· News</span>
-              </h2>
+              <h2 className="font-display text-4xl md:text-5xl text-neutral-950 font-light">新闻 <span className="italic">· News</span></h2>
             </div>
           </div>
 
@@ -132,15 +267,13 @@ const About = () => {
         </div>
       </section>
 
-      {/* Career */}
       <section className="py-24 bg-neutral-950 text-white">
         <div className="container-x">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7">
               <div className="text-xs tracking-[0.3em] text-neutral-400 uppercase mb-4">Join Us</div>
-              <h2 className="font-display text-4xl md:text-5xl font-light mb-6">
-                开启职业 <span className="italic">新篇章</span>
-              </h2>
+              <div className="font-display text-2xl md:text-3xl text-gold mb-3 font-light tracking-wider">加入我们</div>
+              <h2 className="font-display text-4xl md:text-5xl font-light mb-6">开启职业 <span className="italic">新篇章</span></h2>
               <p className="text-base text-neutral-300 leading-relaxed font-serif-cn mb-8 max-w-xl">
                 销售经理长期招人，其他岗位欢迎进一步咨询，我们欢迎每一位高素质人才的到来！
               </p>
@@ -173,36 +306,33 @@ const About = () => {
           </div>
 
           {showCareer && (
-            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-neutral-800 pt-12 fade-in">
-              <div>
-                <h3 className="font-display text-2xl mb-6 font-light">岗位职责</h3>
-                <ol className="space-y-3 text-sm text-neutral-300 font-serif-cn leading-relaxed">
-                  <li>1. 负责公司全盘账务处理，独立完成账务核算、结账及财务报表编制</li>
-                  <li>2. 统筹增值税、企业所得税等各类税务申报及税务筹划工作</li>
-                  <li>3. 负责对接税务局、银行等外部机构，确保沟通顺畅及事务合规推进</li>
-                  <li>4. 跟踪业务数据（销售、库存、回款等），进行财务分析并提供建议</li>
-                  <li>5. 管理公司资金流，优化资金使用效率及风险控制</li>
-                  <li>6. 配合审计工作，确保财务资料完整、规范</li>
-                  <li>7. 完善及优化公司财务制度与流程</li>
-                  <li>8. 工作时间：单双周-周六半天，午餐时间 1.5 小时</li>
-                </ol>
+            <div className="mt-12 border-t border-neutral-800 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-10 fade-in">
+              <div className="lg:col-span-6">
+                <div className="text-xs tracking-[0.3em] text-gold uppercase mb-4">Job Requirements</div>
+                <h3 className="font-display text-2xl md:text-3xl font-light mb-6">岗位要求</h3>
+                <ul className="space-y-3 text-sm text-neutral-300 font-serif-cn leading-relaxed list-disc list-inside">
+                  <li>大专及以上学历，市场营销、机电、制冷或相关专业优先；</li>
+                  <li>3 年以上压缩机、暖通、制冷行业销售经验者优先；</li>
+                  <li>具备良好的商务沟通与谈判能力，抗压能力强；</li>
+                  <li>熟悉行业客户资源，能独立开发与维护大客户；</li>
+                  <li>有责任心、团队合作精神，认同公司价值观。</li>
+                </ul>
               </div>
-              <div>
-                <h3 className="font-display text-2xl mb-6 font-light">任职要求</h3>
-                <ol className="space-y-3 text-sm text-neutral-300 font-serif-cn leading-relaxed">
-                  <li>1. 本科或以上且有至少 5 年全盘财务经验，有制造业/贸易背景优先</li>
-                  <li>2. 熟练使用财务软件、Excel、金蝶云系统</li>
-                  <li>3. 熟悉暖通制冷或工业应用市场，有一定客户资源者优先</li>
-                  <li>4. 具备良好的沟通能力、能独立对接税务局、银行等外部机构</li>
-                  <li>5. 目标导向强，具备较强的市场开拓能力和抗压能力</li>
-                  <li>6. 能适应出差，具备团队合作精神</li>
-                </ol>
-                <div className="mt-8 p-6 bg-neutral-900 border border-neutral-800">
-                  <div className="text-xs tracking-[0.25em] text-neutral-400 uppercase mb-2">Priority</div>
-                  <p className="text-sm text-neutral-300 font-serif-cn">具备 HVACR（暖通空调与制冷）行业背景或相关资源者优先考虑。</p>
-                </div>
-                <p className="mt-6 text-sm text-neutral-400 font-serif-cn">
-                  有意向者欢迎直接将您的简历发至邮箱：<a href="mailto:veranda@veranda.cn" className="text-white underline">veranda@veranda.cn</a>
+              <div className="lg:col-span-6">
+                <div className="text-xs tracking-[0.3em] text-gold uppercase mb-4">Responsibilities & Benefits</div>
+                <h3 className="font-display text-2xl md:text-3xl font-light mb-6">岗位职责 & 福利</h3>
+                <ul className="space-y-3 text-sm text-neutral-300 font-serif-cn leading-relaxed list-disc list-inside mb-6">
+                  <li>负责压缩机及相关产品的市场开发与销售；</li>
+                  <li>维护现有客户关系，持续挖掘合作机会；</li>
+                  <li>跟进项目进度，配合技术与交付团队完成签约与服务。</li>
+                </ul>
+                <div className="text-xs tracking-[0.25em] text-neutral-400 uppercase mb-3">福利待遇</div>
+                <p className="text-sm text-neutral-300 font-serif-cn leading-relaxed mb-6">
+                  基本工资 + 绩效提成 + 项目奖金；五险一金；带薪年假；定期团建与培训；广阔的晋升空间。
+                </p>
+                <div className="text-xs tracking-[0.25em] text-neutral-400 uppercase mb-2">简历投递</div>
+                <p className="text-sm text-neutral-200 font-serif-cn">
+                  请将简历发送至 <a href="mailto:veranda@veranda.cn" className="text-gold hover:underline">veranda@veranda.cn</a>，或致电 <a href="tel:+8613392473750" className="text-gold hover:underline">+86 133 9247 3750</a>。
                 </p>
               </div>
             </div>
@@ -210,29 +340,41 @@ const About = () => {
         </div>
       </section>
 
-      {/* Contact */}
       <section className="py-24 bg-white">
         <div className="container-x">
           <div className="text-center mb-16">
             <div className="text-xs tracking-[0.3em] text-neutral-500 uppercase mb-4">Contact Us</div>
             <h2 className="font-display text-4xl md:text-5xl text-neutral-950 font-light">联系我们</h2>
+            <div className="divider-art max-w-xs mx-auto mt-6"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-10 border border-neutral-200 hover-lift text-center">
-              <Mail className="w-8 h-8 mx-auto mb-6 text-neutral-700" strokeWidth={1} />
-              <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-3">Email</div>
-              <a href="mailto:veranda@veranda.cn" className="font-display text-xl text-neutral-950 hover:text-neutral-600 transition">veranda@veranda.cn</a>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="p-8 border border-neutral-200 hover-lift flex items-start gap-6">
+                <Mail className="w-8 h-8 text-neutral-700 flex-shrink-0 mt-1" strokeWidth={1} />
+                <div>
+                  <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-2">Email</div>
+                  <a href="mailto:veranda@veranda.cn" className="font-display text-xl text-neutral-950 hover:text-neutral-600 transition">veranda@veranda.cn</a>
+                </div>
+              </div>
+              <div className="p-8 border border-neutral-200 hover-lift flex items-start gap-6">
+                <Phone className="w-8 h-8 text-neutral-700 flex-shrink-0 mt-1" strokeWidth={1} />
+                <div>
+                  <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-2">Phone</div>
+                  <a href="tel:+862087690208" className="font-display text-xl text-neutral-950 hover:text-neutral-600 transition block">+86 20 8769 0208</a>
+                  <a href="tel:+8613392473750" className="font-display text-base text-neutral-600 hover:text-neutral-900 transition block mt-1">+86 133 9247 3750</a>
+                </div>
+              </div>
+              <div className="p-8 border border-neutral-200 hover-lift flex items-start gap-6">
+                <MapPin className="w-8 h-8 text-neutral-700 flex-shrink-0 mt-1" strokeWidth={1} />
+                <div>
+                  <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-2">Address</div>
+                  <p className="text-sm text-neutral-700 font-serif-cn leading-relaxed">广州市天河区珠江新城珠江西路 17 号<br />广晟国际大厦 24F</p>
+                </div>
+              </div>
             </div>
-            <div className="p-10 border border-neutral-200 hover-lift text-center">
-              <Phone className="w-8 h-8 mx-auto mb-6 text-neutral-700" strokeWidth={1} />
-              <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-3">Phone</div>
-              <a href="tel:+862087690208" className="font-display text-xl text-neutral-950 hover:text-neutral-600 transition">+86 20 8769 0208</a>
-            </div>
-            <div className="p-10 border border-neutral-200 hover-lift text-center">
-              <MapPin className="w-8 h-8 mx-auto mb-6 text-neutral-700" strokeWidth={1} />
-              <div className="text-xs tracking-[0.25em] text-neutral-500 uppercase mb-3">Address</div>
-              <p className="text-sm text-neutral-700 font-serif-cn leading-relaxed">广州市天河区珠江新城<br />珠江西路 17 号<br />广晟国际大厦 24F</p>
-            </div>
+
+            <InquiryForm />
           </div>
         </div>
       </section>
